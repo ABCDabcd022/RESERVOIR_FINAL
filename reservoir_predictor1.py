@@ -1,4 +1,5 @@
 #Для построения архитектуры ESN использовалась библиотека reservoirPy, основанная на графовых вычислениях
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 from reservoirpy.datasets import to_forecasting # разбиение на train/test
@@ -26,6 +27,7 @@ class reservoir_predictor1:
                 connectivity = 0.1,
                 input_connectivity = 0.2,
                 regularization = 1e-8,
+                
                 seed = 1234):
         self.X = X
         x, y = to_forecasting(X, forecast=prediction_steps)
@@ -90,9 +92,219 @@ class reservoir_predictor1:
         esn = esn.fit(self.X_train, self.y_train)
         #делаем предсказание
         self.y_pred = esn.run(self.X_test)
-        self.results()
+        print(esn)
+        print(esn)
+        self.results() 
+        res = self.rmse() 
         ###HERE1
-        return self.y_pred
+        return self.y_pred, res
+    
+    def rmse(self):
+        res = 0
+        for i in range(len(self.y_pred)):
+            res = res + (self.y_pred[i] - self.y_test[i])**2
+        res = math.sqrt(res/len(self.y_pred))
+        print('RMSE = ', res)
+        return res
+    
+    def set_best(self, ds):
+        self.units = ds[0]
+        self.leak_rate = ds[1]
+        self.spectral_radius = ds[2]
+        self.input_scaling = ds[3]
+        self.connectivity = ds[4]
+        self.input_connectivity = ds[5]
+        self.regularization = ds[6]
+        
+    def get_bset(self):
+        best = [0, 0, 0, 0, 0, 0, 0]
+        
+        best[0] = self.units
+        best[1] = self.leak_rate 
+        best[2] = self.spectral_radius
+        best[3] = self.input_scaling
+        best[4] = self.connectivity 
+        best[5] = self.input_connectivity
+        best[6] = self.regularization 
+        
+        return best
+    
+    def hyperparametric_optimization(self, step=5.0, qt=1):
+        pred, best = self.do()
+        bestSet = self.get_bset()
+        
+        ds = [0, 0, 0, 0, 0, 0, 0]
+        rmse0 = best 
+        
+        d1 = 0
+        d2 = 0
+        for i in range(qt):
+            rmse0 = best 
+            print('ИТЕРАЦИЯ', i)
+            #-->units [0]
+            start = self.units
+            
+            self.units = start + int(step)
+            pred, rmse1 = self.do()
+            if(best < rmse1):
+                self.set_best(bestSet)
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("units +")
+               d1 = rmse1 - rmse0
+            
+            
+            self.units = start
+            self.units = start - int(step)
+            pred, rmse1 = self.do()
+            if(best < rmse1):
+                self.set_best(bestSet)
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("units -")
+               d2 = rmse1 - rmse0
+            
+            #-->-->leak_rate [1]
+            start = self.leak_rate
+            
+            self.leak_rate = start + step/100
+            
+            pred, rmse1 = self.do()
+            
+            if(best < rmse1):
+                
+                self.set_best(bestSet)
+                
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("leak_rate +")
+               d1 = rmse1 - rmse0
+            
+            
+            self.leak_rate = start
+            self.leak_rate = start - step/100
+            pred, rmse1 = self.do()
+            if(best < rmse1):
+                self.set_best(bestSet)
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("leak_rate -")
+               d2 = rmse1 - rmse0
+            
+            #-->-->-->spectral_radius [2]
+            start = self.spectral_radius
+            
+            self.spectral_radius = start + step
+            pred, rmse1 = self.do()
+            if(best < rmse1):
+                self.set_best(bestSet)
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("spectral_radius +")
+               d1 = rmse1 - rmse0
+            
+            
+            self.spectral_radius = start
+            self.spectral_radius = start - step
+            pred, rmse1 = self.do()
+            if(best < rmse1):
+                self.set_best(bestSet)
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("spectral_radius -")
+               d2 = rmse1 - rmse0
+                
+            #-->-->-->-->input_scaling [3]
+            start = self.input_scaling
+            
+            self.input_scaling = start + step
+            pred, rmse1 = self.do()
+            if(best < rmse1):
+                self.set_best(bestSet)
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("input_scaling +")
+               d1 = rmse1 - rmse0
+            
+            
+            self.input_scaling = start
+            self.input_scaling = start - step
+            pred, rmse1 = self.do()
+            if(best < rmse1):
+                self.set_best(bestSet)
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("input_scaling -")
+               d2 = rmse1 - rmse0 
+                
+            #-->-->-->-->-->connectivity [4]
+            
+            
+            #-->-->-->-->-->-->spectral_radius [5]
+            start = self.spectral_radius
+            
+            self.spectral_radius = start + step
+            pred, rmse1 = self.do()
+            if(best < rmse1):
+                self.set_best(bestSet)
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("spectral_radius +")
+               d1 = rmse1 - rmse0
+            
+            
+            self.spectral_radius = start
+            self.spectral_radius = start - step
+            pred, rmse1 = self.do()
+            if(best < rmse1):
+                self.set_best(bestSet)
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("spectral_radius -")
+               d2 = rmse1 - rmse0 
+            
+            #-->-->-->-->-->-->-->regularization [6]
+            start = self.regularization
+            
+            self.regularization = start + step
+            pred, rmse1 = self.do()
+            if(best < rmse1):
+                self.set_best(bestSet)
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("regularization +")
+               d1 = rmse1 - rmse0
+            
+            
+            self.regularization = start
+            self.regularization = start - step
+            pred, rmse1 = self.do()
+            if(best < rmse1):
+                self.set_best(bestSet)
+            else:
+               best = rmse1
+               bestSet = self.get_bset()
+               print("regularization -")
+               d2 = rmse1 - rmse0 
+        
+        self.set_best(bestSet)
+        
+        print(bestSet)
+        print(best)
+        self.do()
+        return(bestSet)
+        
 
 ###ПОДГОТОВКА ДАННЫХ
 #9
@@ -109,8 +321,8 @@ X = time[:,0] #берем только x
 X = X.reshape(100000,1) #зачем-то 
 X = 2 * (X - X.min()) / (X.max() - X.min()) - 1 #нормализация(?)
 
-model = reservoir_predictor1(X=X)
-pred = model.do()
+#model = reservoir_predictor1(X=X)
+#pred = model.do()
 
-model = reservoir_predictor1(X=X, prediction_steps = 50)
-pred = model.do()
+#model = reservoir_predictor1(X=X, prediction_steps = 50)
+#pred = model.do()
