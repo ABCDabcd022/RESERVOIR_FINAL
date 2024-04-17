@@ -85,6 +85,7 @@ class reservoir_predictor1:
                             input_connectivity=self.input_connectivity, seed=self.seed)
         #выходной слой(считывающее устройство)
         readout = Ridge(1, ridge=self.regularization) # 1 - кол-во выходных нейронов
+        
         #соединяем узлы и таким образом получаем модель 
         esn = reservoir >> readout
 
@@ -92,12 +93,19 @@ class reservoir_predictor1:
         esn = esn.fit(self.X_train, self.y_train)
         #делаем предсказание
         self.y_pred = esn.run(self.X_test)
-        print(esn)
-        print(esn)
+        #print(esn)
+        #print(esn.)
         self.results() 
         res = self.rmse() 
         ###HERE1
-        return self.y_pred, res
+        print('000')
+        #readout.print_Wout()
+        print('000')
+        Wout = readout.give_Wout()
+        #print(Wout)
+        
+        return self.y_pred, res, Wout #предсказание, метрика, Wout
+    
     
     def rmse(self):
         res = 0
